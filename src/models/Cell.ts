@@ -1,15 +1,27 @@
+/**
+ * Класс клетки шахматной доски
+ * 
+ * Представляет одну клетку на доске с ее координатами, цветом и фигурой
+ */
 import {Colors} from "./Colors";
 import {Figure} from "./figures/Figure";
 import {Board} from "./Board";
 
 export class Cell {
+  // Координата X (горизонтальная) от 0 до 7
   readonly x: number;
+  // Координата Y (вертикальная) от 0 до 7
   readonly y: number;
+  // Цвет клетки (черная или белая)
   readonly color: Colors;
+  // Фигура, стоящая на клетке, или null если клетка пуста
   figure: Figure | null;
+  // Ссылка на доску, к которой принадлежит клетка
   board: Board;
-  available: boolean; // Можешь ли переместиться
-  id: number; // Для реакт ключей
+  // Флаг, доступна ли клетка для хода (подсветка)
+  available: boolean;
+  // Уникальный идентификатор для React ключей
+  id: number;
 
   constructor(board: Board, x: number, y: number, color: Colors, figure: Figure | null) {
     this.x = x;
@@ -21,10 +33,19 @@ export class Cell {
     this.id = Math.random()
   }
 
+  /**
+   * Проверяет, пуста ли клетка
+   * @returns true если на клетке нет фигуры
+   */
   isEmpty(): boolean {
     return this.figure === null;
   }
 
+  /**
+   * Проверяет, является ли фигура на целевой клетке врагом
+   * @param target Целевая клетка для проверки
+   * @returns true если на целевой клетке стоит фигура противника
+   */
   isEnemy(target: Cell): boolean {
     if (target.figure) {
       return this.figure?.color !== target.figure.color;
@@ -32,6 +53,11 @@ export class Cell {
     return false;
   }
 
+  /**
+   * Проверяет, свободен ли вертикальный путь между клетками
+   * @param target Целевая клетка
+   * @returns true если путь по вертикали свободен от фигур
+   */
   isEmptyVertical(target: Cell): boolean {
     if (this.x !== target.x) {
       return false;
@@ -47,6 +73,11 @@ export class Cell {
     return true;
   }
 
+  /**
+   * Проверяет, свободен ли горизонтальный путь между клетками
+   * @param target Целевая клетка
+   * @returns true если путь по горизонтали свободен от фигур
+   */
   isEmptyHorizontal(target: Cell): boolean {
     if (this.y !== target.y) {
       return false;
@@ -62,6 +93,11 @@ export class Cell {
     return true;
   }
 
+  /**
+   * Проверяет, свободен ли диагональный путь между клетками
+   * @param target Целевая клетка
+   * @returns true если путь по диагонали свободен от фигур
+   */
   isEmptyDiagonal(target: Cell): boolean {
     const absX = Math.abs(target.x - this.x);
     const absY = Math.abs(target.y - this.y);
@@ -78,17 +114,29 @@ export class Cell {
     return true;
   }
 
+  /**
+   * Устанавливает фигуру на клетку
+   * @param figure Фигура для установки
+   */
   setFigure(figure: Figure) {
     this.figure = figure;
     this.figure.cell = this;
   }
 
+  /**
+   * Добавляет сбитую фигуру в соответствующий массив
+   * @param figure Сбитая фигура
+   */
   addLostFigure(figure: Figure) {
     figure.color === Colors.BLACK
       ? this.board.lostBlackFigures.push(figure)
       : this.board.lostWhiteFigures.push(figure)
   }
 
+  /**
+   * Перемещает фигуру с текущей клетки на целевую
+   * @param target Целевая клетка для перемещения
+   */
   moveFigure(target: Cell) {
     if(this.figure && this.figure?.canMove(target)) {
       this.figure.moveFigure(target)
