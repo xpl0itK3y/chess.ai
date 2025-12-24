@@ -20,31 +20,19 @@ const App = () => {
   // Состояние шахматной доски - содержит все фигуры и их позиции
   const [board, setBoard] = useState(new Board())
   // Игрок, играющий белыми фигурами
-  const [whitePlayer, setWhitePlayer] = useState(new Player(Colors.WHITE))
-  // Игрок, играющий черными фигурами
-  const [blackPlayer, setBlackPlayer] = useState(new Player(Colors.BLACK))
-  // Текущий игрок, чей ход сейчас
-  const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
 
-  // Хук useEffect выполняется при первом рендере компонента
-  // Инициализирует доску и устанавливает первого игрока (белые)
   useEffect(() => {
     restart()
-    setCurrentPlayer(whitePlayer);
   }, [])
 
-  /**
-   * Перезапускает игру:
-   * - Создает новую доску
-   * - Инициализирует все клетки доски
-   * - Расставляет фигуры в начальные позиции
-   * - Обновляет состояние доски
-   */
   function restart() {
     const newBoard = new Board();
     newBoard.initCells()
     newBoard.addFigures()
     setBoard(newBoard)
+    // Устанавливаем белого игрока первым
+    setCurrentPlayer(new Player(Colors.WHITE));
   }
 
   /**
@@ -52,7 +40,7 @@ const App = () => {
    * Если сейчас ход белых, делает ход черных, и наоборот
    */
   function swapPlayer() {
-    setCurrentPlayer(currentPlayer?.color === Colors.WHITE ? blackPlayer : whitePlayer)
+    setCurrentPlayer(currentPlayer?.color === Colors.WHITE ? new Player(Colors.BLACK) : new Player(Colors.WHITE))
   }
 
   return (

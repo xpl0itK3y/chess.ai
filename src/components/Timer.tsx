@@ -26,6 +26,7 @@ const Timer: FC<TimerProps> = ({currentPlayer, restart}) => {
   // Запускаем таймер при смене игрока
   useEffect(() => {
     startTimer()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPlayer])
 
   /**

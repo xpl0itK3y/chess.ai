@@ -36,16 +36,16 @@ export class Pawn extends Figure {
     const firstStepDirection = this.cell.figure?.color === Colors.BLACK ? 2 : -2
 
     // Движение вперед на 1 клетку или на 2 клетки с первого хода
-    if ((target.y === this.cell.y + direction || this.isFirstStep
-        && (target.y === this.cell.y + firstStepDirection))
+    if (((target.y === this.cell.y + direction) || (this.isFirstStep
+        && (target.y === this.cell.y + firstStepDirection)))
       && target.x === this.cell.x
       && this.cell.board.getCell(target.x, target.y).isEmpty()) {
       return true;
     }
 
     // Атака по диагонали: пешка может атаковать фигуры противника по диагонали
-    if(target.y === this.cell.y + direction
-    && (target.x === this.cell.x + 1 || target.x === this.cell.x - 1)
+    if((target.y === this.cell.y + direction)
+    && ((target.x === this.cell.x + 1) || (target.x === this.cell.x - 1))
     && this.cell.isEnemy(target)) {
       return true;
     }

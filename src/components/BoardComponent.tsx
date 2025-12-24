@@ -45,6 +45,7 @@ const BoardComponent: FC<BoardProps> = ({board, setBoard, currentPlayer, swapPla
   // Подсвечиваем доступные для хода клетки при изменении выбранной клетки
   useEffect(() => {
     highlightCells()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCell])
 
   /**
