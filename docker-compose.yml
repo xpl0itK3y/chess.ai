@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # Сервис chess-app - наше React приложение
+  chess-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      # Пробрасываем порт 3000 из контейнера на порт 3000 хоста
+      - "3000:3000"
+    volumes:
+      # Монтируем исходный код для горячей перезагрузки в режиме разработки
+      - ./src:/app/src
+      - ./public:/app/public
+    environment:
+      # Устанавливаем переменные окружения для разработки
+      - NODE_ENV=development
+      - NODE_OPTIONS=--openssl-legacy-provider
+    restart: unless-stopped
+    # Дополнительные опции для разработки
+    stdin_open: true
+    tty: true
