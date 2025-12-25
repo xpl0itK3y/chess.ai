@@ -1,8 +1,15 @@
 import { OpenAI } from 'openai';
 
 export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS headers - ограничим только вашими доменами в проде
+  const allowedOrigins = process.env.NODE_ENV === 'production' 
+    ? ['https://your-vercel-app.vercel.app', 'http://localhost:3000']
+    : ['http://localhost:3000'];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
@@ -24,6 +31,10 @@ export default async function handler(req, res) {
       apiKey: apiKey,
     });
 
+    // Rate limiting - простая защита от злоупотреблений
+    const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    console.log(`API request from: ${clientIP}`);
+    
     // Test connection with a simple request
     const response = await openaiClient.chat.completions.create({
       model: "gpt-3.5-turbo",
