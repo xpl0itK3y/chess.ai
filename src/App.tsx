@@ -7,7 +7,7 @@
  * - Текущего игрока
  * - Перезапуск игры
  */
-import React, {useEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
 import "./App.css";
 import BoardComponent from "./components/BoardComponent";
 import {Board} from "./models/Board";
@@ -15,6 +15,7 @@ import {Player} from "./models/Player";
 import {Colors} from "./models/Colors";
 import LostFigures from "./components/LostFigures";
 import Timer from "./components/Timer";
+import ApiTestComponent from "./components/ApiTestComponent";
 
 const App = () => {
   // Состояние шахматной доски - содержит все фигуры и их позиции
@@ -70,6 +71,8 @@ const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
           figures={board.lostWhiteFigures}
         />
       </div>
+      {/* Компонент для проверки OpenAI API */}
+      <ApiTestComponent />
     </div>
   );
 };
