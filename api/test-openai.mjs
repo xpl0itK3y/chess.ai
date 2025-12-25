@@ -1,6 +1,8 @@
-const { Configuration, OpenAIApi } = require('openai');
+const { OpenAI } = require('openai');
 
-module.exports = async (req, res) => {
+const openai = new OpenAI();
+
+export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -20,14 +22,12 @@ module.exports = async (req, res) => {
       });
     }
 
-    const configuration = new Configuration({
+    const openaiClient = new OpenAI({
       apiKey: apiKey,
     });
 
-    const openai = new OpenAIApi(configuration);
-
     // Test connection with a simple request
-    const response = await openai.createChatCompletion({
+    const response = await openaiClient.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
@@ -41,9 +41,9 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'OpenAI API connection successful',
-      response: response.data.choices[0].message.content,
-      model: response.data.model,
-      usage: response.data.usage
+      response: response.choices[0].message.content,
+      model: response.model,
+      usage: response.usage
     });
 
   } catch (error) {
@@ -55,4 +55,4 @@ module.exports = async (req, res) => {
       details: error.response?.data || 'No additional details'
     });
   }
-};
+}
