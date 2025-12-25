@@ -3,9 +3,10 @@
  * 
  * Представляет одну клетку на доске с ее координатами, цветом и фигурой
  */
-import {Colors} from "./Colors";
-import {Figure} from "./figures/Figure";
-import {Board} from "./Board";
+import { Colors } from "./Colors";
+import { Figure } from "./figures/Figure";
+import { Board } from "./Board";
+import { Pawn } from "./figures/Pawn";
 
 export class Cell {
   // Координата X (горизонтальная) от 0 до 7
@@ -66,7 +67,7 @@ export class Cell {
     const min = Math.min(this.y, target.y);
     const max = Math.max(this.y, target.y);
     for (let y = min + 1; y < max; y++) {
-      if(!this.board.getCell(this.x, y).isEmpty()) {
+      if (!this.board.getCell(this.x, y).isEmpty()) {
         return false
       }
     }
@@ -86,7 +87,7 @@ export class Cell {
     const min = Math.min(this.x, target.x);
     const max = Math.max(this.x, target.x);
     for (let x = min + 1; x < max; x++) {
-      if(!this.board.getCell(x, this.y).isEmpty()) {
+      if (!this.board.getCell(x, this.y).isEmpty()) {
         return false
       }
     }
@@ -101,14 +102,14 @@ export class Cell {
   isEmptyDiagonal(target: Cell): boolean {
     const absX = Math.abs(target.x - this.x);
     const absY = Math.abs(target.y - this.y);
-    if(absY !== absX)
+    if (absY !== absX)
       return false;
 
     const dy = this.y < target.y ? 1 : -1
     const dx = this.x < target.x ? 1 : -1
 
     for (let i = 1; i < absY; i++) {
-      if(!this.board.getCell(this.x + dx*i, this.y + dy   * i).isEmpty())
+      if (!this.board.getCell(this.x + dx * i, this.y + dy * i).isEmpty())
         return false;
     }
     return true;
@@ -134,18 +135,42 @@ export class Cell {
   }
 
   /**
+   * Проверяет, требуется ли превращение пешки
+   */
+  isPawnPromotion(figure: Figure, targetY: number): boolean {
+    if (!(figure instanceof Pawn)) return false;
+    const promotionRow = figure.color === Colors.BLACK ? 7 : 0;
+    return targetY === promotionRow;
+  }
+
+  /**
    * Перемещает фигуру с текущей клетки на целевую
    * @param target Целевая клетка для перемещения
+   * @returns true если требуется превращение пешки
    */
-  moveFigure(target: Cell) {
-    if(this.figure && this.figure?.canMove(target)) {
+  moveFigure(target: Cell): boolean {
+    if (this.figure && this.figure?.canMove(target)) {
       this.figure.moveFigure(target)
       if (target.figure) {
-        console.log(target.figure)
         this.addLostFigure(target.figure);
       }
+
+      // Проверяем превращение пешки
+      const needsPromotion = this.isPawnPromotion(this.figure, target.y);
+
       target.setFigure(this.figure);
       this.figure = null;
+
+      // Сбрасываем lastMovedPawn для противника
+      const movedFigure = target.figure;
+      if (movedFigure && !(movedFigure instanceof Pawn)) {
+        if (this.board.lastMovedPawn && this.board.lastMovedPawn.color !== movedFigure.color) {
+          this.board.lastMovedPawn = null;
+        }
+      }
+
+      return needsPromotion;
     }
+    return false;
   }
 }

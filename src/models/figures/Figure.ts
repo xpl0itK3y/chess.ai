@@ -2,8 +2,8 @@
  * Базовый класс для всех шахматных фигур
  */
 import logo from '../../assets/black-king.png'
-import {Colors} from "../Colors";
-import {Cell} from "../Cell";
+import { Colors } from "../Colors";
+import { Cell } from "../Cell";
 
 /**
  * Перечисление названий всех шахматных фигур
@@ -44,17 +44,38 @@ export class Figure {
   }
 
   /**
+   * Базовая проверка: нельзя атаковать свои фигуры
+   * @param target Целевая клетка
+   * @returns true если атака возможна (не своя фигура)
+   */
+  protected canAttackTarget(target: Cell): boolean {
+    if (target.figure?.color === this.color)
+      return false;
+    return true;
+  }
+
+  /**
    * Проверяет, может ли фигура переместиться на целевую клетку
    * Базовая проверка: нельзя атаковать свои фигуры и короля
    * @param target Целевая клетка
    * @returns true если ход возможен
    */
-  canMove(target: Cell) : boolean {
-    if(target.figure?.color === this.color)
-      return false
-    if(target.figure?.name === FigureNames.KING)
-      return false
+  canMove(target: Cell): boolean {
+    if (!this.canAttackTarget(target))
+      return false;
+    if (target.figure?.name === FigureNames.KING)
+      return false;
     return true;
+  }
+
+  /**
+   * Проверяет, может ли фигура атаковать клетку (для проверки шаха)
+   * НЕ включает ограничение на атаку короля
+   * @param target Целевая клетка
+   * @returns true если фигура может атаковать клетку
+   */
+  canMoveWithoutCheck(target: Cell): boolean {
+    return this.canAttackTarget(target);
   }
 
   /**
@@ -62,5 +83,5 @@ export class Figure {
    * В базовом классе не реализуется, переопределяется в наследниках
    * @param target Целевая клетка
    */
-  moveFigure(target: Cell) {}
+  moveFigure(target: Cell) { }
 }

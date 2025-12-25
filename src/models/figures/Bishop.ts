@@ -3,9 +3,9 @@
  * 
  * Слон может перемещаться на любое количество клеток только по диагонали
  */
-import {Figure, FigureNames} from "./Figure";
-import {Colors} from "../Colors";
-import {Cell} from "../Cell";
+import { Figure, FigureNames } from "./Figure";
+import { Colors } from "../Colors";
+import { Cell } from "../Cell";
 import blackLogo from '../../assets/black-bishop.png'
 import whiteLogo from '../../assets/white-bishop.png'
 
@@ -24,13 +24,26 @@ export class Bishop extends Figure {
    */
   canMove(target: Cell): boolean {
     // Сначала выполняем базовую проверку из родительского класса
-    if(!super.canMove(target))
+    if (!super.canMove(target))
       return false;
-    
+
     // Слон может двигаться только по диагонали, если путь свободен
-    if(this.cell.isEmptyDiagonal(target))
+    if (this.cell.isEmptyDiagonal(target))
       return true
-    
+
     return false
+  }
+
+  /**
+   * Проверяет, может ли слон атаковать клетку (для шаха)
+   */
+  canMoveWithoutCheck(target: Cell): boolean {
+    if (!super.canMoveWithoutCheck(target))
+      return false;
+
+    if (this.cell.isEmptyDiagonal(target))
+      return true;
+
+    return false;
   }
 }

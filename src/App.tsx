@@ -7,21 +7,25 @@
  * - Текущего игрока
  * - Перезапуск игры
  */
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import "./App.css";
 import BoardComponent from "./components/BoardComponent";
-import {Board} from "./models/Board";
-import {Player} from "./models/Player";
-import {Colors} from "./models/Colors";
+import { Board } from "./models/Board";
+import { Player } from "./models/Player";
+import { Colors } from "./models/Colors";
 import LostFigures from "./components/LostFigures";
 import Timer from "./components/Timer";
 import ApiTestComponent from "./components/ApiTestComponent";
+import { runAllTests } from "./tests/chessTests";
+
+// Делаем тесты доступными в консоли браузера
+(window as any).runChessTests = runAllTests;
 
 const App = () => {
   // Состояние шахматной доски - содержит все фигуры и их позиции
   const [board, setBoard] = useState(new Board())
   // Игрок, играющий белыми фигурами
-const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+  const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
 
   useEffect(() => {
     restart()
