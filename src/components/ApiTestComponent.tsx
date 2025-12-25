@@ -20,7 +20,10 @@ const ApiTestComponent: React.FC = () => {
     setResult(null);
 
     try {
-      const response = await axios.get('/api/test-openai');
+      const apiUrl = process.env.NODE_ENV === 'production' 
+  ? '/api/test-openai' 
+  : 'http://localhost:3000/api/test-openai';
+const response = await axios.get(apiUrl);
       setResult(response.data);
     } catch (error: any) {
       setResult({
