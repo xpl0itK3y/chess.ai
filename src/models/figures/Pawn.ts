@@ -36,19 +36,21 @@ export class Pawn extends Figure {
     // Направление для первого хода: черные на 2 клетки вниз, белые на 2 вверх
     const firstStepDirection = this.cell.figure?.color === Colors.BLACK ? 2 : -2
 
-    // Движение вперед на 1 клетку
+    // Движение вперед на 1 клетку (только если НЕ en passant)
     if (target.y === this.cell.y + direction
       && target.x === this.cell.x
-      && this.cell.board.getCell(target.x, target.y).isEmpty()) {
+      && this.cell.board.getCell(target.x, target.y).isEmpty()
+      && !this.canEnPassant(target)) {
       return true;
     }
 
-    // Движение на 2 клетки с первого хода
+    // Движение на 2 клетки с первого хода (только если НЕ en passant)
     if (this.isFirstStep
       && target.y === this.cell.y + firstStepDirection
       && target.x === this.cell.x
       && this.cell.board.getCell(target.x, target.y).isEmpty()
-      && this.cell.board.getCell(target.x, this.cell.y + direction).isEmpty()) {
+      && this.cell.board.getCell(target.x, this.cell.y + direction).isEmpty()
+      && !this.canEnPassant(target)) {
       return true;
     }
 

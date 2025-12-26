@@ -158,8 +158,11 @@ export class Cell {
       // Проверяем превращение пешки
       const needsPromotion = this.isPawnPromotion(this.figure, target.y);
 
-      target.setFigure(this.figure);
+      // Сохраняем ссылку на фигуру ПЕРЕД обновлением
+      const movingFigure = this.figure;
       this.figure = null;
+      
+      target.setFigure(movingFigure);
 
       // Сбрасываем lastMovedPawn для противника
       const movedFigure = target.figure;

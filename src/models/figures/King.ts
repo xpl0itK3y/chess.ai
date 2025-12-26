@@ -95,9 +95,12 @@ export class King extends Figure {
    * Перемещает короля и выполняет рокировку при необходимости
    */
   moveFigure(target: Cell) {
+    const originalX = this.cell.x;
+    const originalY = this.cell.y;
+    
     super.moveFigure(target);
 
-    const deltaX = Math.abs(this.cell.x - target.x);
+    const deltaX = Math.abs(originalX - target.x);
 
     // Если это рокировка, перемещаем ладью
     if (this.isFirstMove && deltaX === 2) {
