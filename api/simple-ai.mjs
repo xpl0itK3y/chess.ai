@@ -36,7 +36,7 @@ export default async function handler(req, res) {
             for (let ty = 0; ty < 8; ty++) {
               for (let tx = 0; tx < 8; tx++) {
                 const toCell = board.cells[ty][tx];
-                if (toCell.figure && toCell.figure.color === targetColor) {
+                if (toCell.figure && toCell.figure.color === targetColor && fromCell.figure) {
                   // Проверяем может ли фигура взять
                   if (fromCell.figure.canMove(toCell)) {
                     const captureNotation = convertMoveToNotation(fromCell, toCell, board);

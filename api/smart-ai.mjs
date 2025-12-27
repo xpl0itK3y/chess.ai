@@ -72,7 +72,7 @@ export default async function handler(req, res) {
             for (let tx = 0; tx < 8; tx++) {
               const toCell = board.cells[ty][tx];
               
-              if (fromCell.figure.canMove(toCell)) {
+              if (fromCell.figure && fromCell.figure.canMove && fromCell.figure.canMove(toCell)) {
                 const score = evaluateMove(x, y, tx, ty, board);
                 
                 if (score > bestScore) {
