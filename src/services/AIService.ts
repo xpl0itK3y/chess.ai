@@ -84,7 +84,7 @@ export function parseAlgebraicMove(move: string, board: Board): AIMoveResult {
     }
 
     // Парсинг обычных ходов (например: "e4", "Nf3", "Bxe5", "Qh5+")
-    const captureMatch = move.match(/^([KQRBN])?([a-h])([1-8])x([a-h])([1-8])([=][QRBN])?([+#])?$/);
+    const captureMatch = move.match(/^([KQRBN])?([a-h])([1-8])?x([a-h])([1-8])([=][QRBN])?([+#])?$/);
     const normalMatch = move.match(/^([KQRBN])?([a-h])([1-8])([=][QRBN])?([+#])?$/);
     const pawnCaptureMatch = move.match(/^([a-h])x([a-h])([1-8])([=][QRBN])?([+#])?$/);
     
@@ -93,11 +93,20 @@ export function parseAlgebraicMove(move: string, board: Board): AIMoveResult {
     let promotion: string | undefined;
 
     if (captureMatch) {
-      // Ход со взятием (например: "Nf3xe5")
+      // Ход со взятием (например: "Nxe5", "Bxc4")
       const piece = captureMatch[1];
-      to = { x: captureMatch[4].charCodeAt(0) - 97, y: 8 - parseInt(captureMatch[5]) };
-      promotion = captureMatch[6]?.replace('=', '');
-      from = findPiecePosition(piece || 'P', to, board);
+      const disambiguation = captureMatch[2]; // Может быть undefined для простых взятий
+      to = { x: captureMatch[3].charCodeAt(0) - 97, y: 8 - parseInt(captureMatch[4]) };
+      promotion = captureMatch[5]?.replace('=', '');
+      
+      // Если есть дизамбигуация (например: "Nbxd4"), используем ее
+      if (disambiguation && captureMatch[2].length === 1) {
+        from = findPiecePosition(piece || 'P', to, board, disambiguation);
+      } else {
+        from = findPiecePosition(piece || 'P', to, board);
+      }
+      
+      console.log(`Parsing capture: ${move}, piece: ${piece || 'P'}, from: ${from}, to: (${to.x},${to.y})`);
     } else if (normalMatch) {
       // Обычный ход (например: "e4", "Nf3")
       const piece = normalMatch[1];
@@ -336,7 +345,7 @@ export async function getAIMove(board: Board, currentColor: Colors): Promise<AIM
  * Fallback функция - выбирает случайный легальный ход для черных
  */
 function getRandomBlackMove(board: Board): AIMoveResult {
-  const possibleMoves: { from: { x: number; y: number }, to: { x: number; y: number } }[] = [];
+  const possibleMoves: { from: { x: number; y: number }, to: { x: number; y: number }, isCapture: boolean }[] = [];
   
   // Ищем все возможные ходы для черных фигур
   for (let y = 0; y < 8; y++) {
@@ -349,9 +358,11 @@ function getRandomBlackMove(board: Board): AIMoveResult {
           for (let tx = 0; tx < 8; tx++) {
             const toCell = board.getCell(tx, ty);
             if (fromCell.figure.canMove(toCell)) {
+              const isCapture = toCell.figure !== null;
               possibleMoves.push({
                 from: { x, y },
-                to: { x: tx, y: ty }
+                to: { x: tx, y: ty },
+                isCapture
               });
             }
           }
@@ -367,13 +378,22 @@ function getRandomBlackMove(board: Board): AIMoveResult {
     };
   }
   
-  // Выбираем случайный ход
-  const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-  console.log(`Fallback: selected move from (${randomMove.from.x},${randomMove.from.y}) to (${randomMove.to.x},${randomMove.to.y})`);
+  // Приоритет взятиям (70% шанс если есть взятия)
+  const captures = possibleMoves.filter(move => move.isCapture);
+  const nonCaptures = possibleMoves.filter(move => !move.isCapture);
+  
+  let selectedMove;
+  if (captures.length > 0 && Math.random() < 0.7) {
+    selectedMove = captures[Math.floor(Math.random() * captures.length)];
+    console.log(`Fallback: selected CAPTURE from (${selectedMove.from.x},${selectedMove.from.y}) to (${selectedMove.to.x},${selectedMove.to.y})`);
+  } else {
+    selectedMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    console.log(`Fallback: selected move from (${selectedMove.from.x},${selectedMove.from.y}) to (${selectedMove.to.x},${selectedMove.to.y})`);
+  }
   
   return {
     success: true,
-    from: randomMove.from,
-    to: randomMove.to
+    from: selectedMove.from,
+    to: selectedMove.to
   };
 }
