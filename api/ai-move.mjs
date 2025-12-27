@@ -87,25 +87,24 @@ export default async function handler(req, res) {
     console.log(`FEN: ${fenBoard}`);
     console.log(`Player: ${playerColor}`);
 
-const prompt = `Ты - шахматный мастер. Анализируй позицию и сделай лучший ход для ${playerColor}.
+const prompt = `Сделай легальный ход для ${playerColor}.
 
-Доска в FEN нотации: ${fenBoard}
-Текущий ход: ${playerColor}
+Позиция: ${fenBoard}
+Ход: ${playerColor}
 
-ВАЖНО: Ты играешь за ${playerColor}. Сделай легальный ход для ${playerColor} фигур.
+ЗАПРЕЩЕННЫЕ ХОДЫ ДЛЯ ЧЕРНЫХ:
+- e4, d4, f4, c4 (это ходы белых пешек!)
+- Bc4, Bb5 (это ходы белых слонов!)
+- Nf3, Nc3 (это ходы белых коней!)
 
-Правила:
-1. Верни только ход в стандартной алгебраической нотации
-2. Ход должен быть легальным для ${playerColor}
-3. Для пешек используй только координаты поля (e5, d5, Nf6)
-4. Для фигур используй букву + координаты (Nf6, Nc6, Bxe5, Qxd4)
-5. Начальная позиция черных: e5, d5, Nf6, Nc6
-6. Не пиши объяснений, только ход
+РАЗРЕШЕННЫЕ ХОДЫ ДЛЯ ЧЕРНЫХ:
+- e5, d5, f5, c5 (пешки)
+- Nf6, Nc6, Na6, Nh6 (кони)
+- Bc5, Bb4, Bg7, Bg4 (слоны)
 
-Если ${playerColor === 'черных'}:
-- Возможные первые ходы: e5, d5, Nf6, Nc6, Bc5, Bb4, g6, b6
+ТВЕ РАБОТА: Верни ОДИН легальный ход для ${playerColor}.
 
-Лучший ход для ${playerColor}:`;
+Ход:`;
 
     const response = await openaiClient.chat.completions.create({
       model: "gpt-3.5-turbo",

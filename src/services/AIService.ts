@@ -39,6 +39,16 @@ export function parseAlgebraicMove(move: string, board: Board): AIMoveResult {
       };
     }
 
+    // Проверяем на очевидно неправильные ходы для черных
+    const blackInvalidMoves = ['e4', 'd4', 'f4', 'c4', 'Bc4', 'Nf3', 'Nc3', 'Bb5', 'Qh5'];
+    if (blackInvalidMoves.includes(move)) {
+      console.log(`Invalid move for black pieces: ${move}`);
+      return {
+        success: false,
+        error: `Invalid move for black pieces: ${move}. Black cannot move to white starting positions.`
+      };
+    }
+
     // Парсинг обычных ходов (например: "e4", "Nf3", "Bxe5", "Qh5+")
     const captureMatch = move.match(/^([KQRBN])?([a-h])([1-8])x([a-h])([1-8])([=][QRBN])?([+#])?$/);
     const normalMatch = move.match(/^([KQRBN])?([a-h])([1-8])([=][QRBN])?([+#])?$/);
@@ -87,7 +97,13 @@ export function parseAlgebraicMove(move: string, board: Board): AIMoveResult {
             for (let x = 0; x < 8; x++) {
               const cell = board.getCell(x, y);
               if (cell.figure && cell.figure.color === Colors.BLACK) {
-                console.log(`${cell.figure.name} at (${x},${y})`);
+                // Проверяем может ли фигура вообще ходить
+                const targetCell = board.getCell(to.x, to.y);
+                if (cell.figure.canMove(targetCell)) {
+                  console.log(`✓ ${cell.figure.name} at (${x},${y}) CAN move to (${to.x},${to.y})`);
+                } else {
+                  console.log(`✗ ${cell.figure.name} at (${x},${y}) CANNOT move to (${to.x},${to.y})`);
+                }
               }
             }
           }
@@ -240,6 +256,13 @@ export async function getAIMove(board: Board, currentColor: Colors): Promise<AIM
 
     if (response.data.success && response.data.move) {
       const parsedMove = parseAlgebraicMove(response.data.move, board);
+      
+      // Если AI дал плохой ход, пробуем fallback
+      if (!parsedMove.success && currentColor === Colors.BLACK) {
+        console.log("AI gave invalid move, trying fallback...");
+        return getRandomBlackMove(board);
+      }
+      
       return parsedMove;
     } else {
       return {
@@ -253,4 +276,50 @@ export async function getAIMove(board: Board, currentColor: Colors): Promise<AIM
       error: error.message || 'Failed to get AI move'
     };
   }
+}
+
+/**
+ * Fallback функция - выбирает случайный легальный ход для черных
+ */
+function getRandomBlackMove(board: Board): AIMoveResult {
+  const possibleMoves: { from: { x: number; y: number }, to: { x: number; y: number } }[] = [];
+  
+  // Ищем все возможные ходы для черных фигур
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const fromCell = board.getCell(x, y);
+      if (fromCell.figure && fromCell.figure.color === Colors.BLACK) {
+        
+        // Проверяем все возможные цели
+        for (let ty = 0; ty < 8; ty++) {
+          for (let tx = 0; tx < 8; tx++) {
+            const toCell = board.getCell(tx, ty);
+            if (fromCell.figure.canMove(toCell)) {
+              possibleMoves.push({
+                from: { x, y },
+                to: { x: tx, y: ty }
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  if (possibleMoves.length === 0) {
+    return {
+      success: false,
+      error: 'No legal moves found'
+    };
+  }
+  
+  // Выбираем случайный ход
+  const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+  console.log(`Fallback: selected move from (${randomMove.from.x},${randomMove.from.y}) to (${randomMove.to.x},${randomMove.to.y})`);
+  
+  return {
+    success: true,
+    from: randomMove.from,
+    to: randomMove.to
+  };
 }
