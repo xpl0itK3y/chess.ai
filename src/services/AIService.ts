@@ -249,14 +249,32 @@ export async function getAIMove(board: Board, currentColor: Colors): Promise<AIM
       lostWhiteFigures: board.lostWhiteFigures
     };
 
-    const apiUrl = '/api/ai-move';
+    // Сначала пробуем простой AI
+    try {
+      const simpleResponse = await axios.post('/api/simple-ai', {
+        board: boardData,
+        currentColor: currentColor
+      });
 
-    const response = await axios.post(apiUrl, {
+      if (simpleResponse.data.success && simpleResponse.data.move) {
+        const parsedMove = parseAlgebraicMove(simpleResponse.data.move, board);
+        console.log("Simple AI response:", simpleResponse.data);
+        
+        if (parsedMove.success) {
+          return parsedMove;
+        }
+      }
+    } catch (simpleError: any) {
+      console.log("Simple AI failed:", simpleError.message);
+    }
+
+    // Если простой AI не сработал, пробуем полный AI
+    const response = await axios.post('/api/ai-move', {
       board: boardData,
       currentColor: currentColor
     });
 
-    console.log('API response:', response.data);
+    console.log('Full AI response:', response.data);
 
     if (response.data.success && response.data.move) {
       const parsedMove = parseAlgebraicMove(response.data.move, board);
