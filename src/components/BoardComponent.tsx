@@ -23,9 +23,10 @@ interface BoardProps {
   setBoard: (board: Board) => void; // Функция для обновления состояния доски
   currentPlayer: Player | null; // Текущий игрок
   swapPlayer: () => void; // Функция для переключения игрока
+  isAIThinking?: boolean; // Думает ли AI в данный момент
 }
 
-const BoardComponent: FC<BoardProps> = ({ board, setBoard, currentPlayer, swapPlayer }) => {
+const BoardComponent: FC<BoardProps> = ({ board, setBoard, currentPlayer, swapPlayer, isAIThinking = false }) => {
   // Состояние выбранной клетки
   const [selectedCell, setSelectedCell] = useState<Cell | null>(null);
   // Состояние для превращения пешки
@@ -38,8 +39,8 @@ const BoardComponent: FC<BoardProps> = ({ board, setBoard, currentPlayer, swapPl
    * @param cell Клетка, по которой кликнули
    */
   function click(cell: Cell) {
-    // Если игра закончена, ходы запрещены
-    if (gameStatus === 'checkmate' || gameStatus === 'stalemate') {
+    // Если игра закончена или AI думает, ходы запрещены
+    if (gameStatus === 'checkmate' || gameStatus === 'stalemate' || isAIThinking) {
       return;
     }
 
@@ -167,6 +168,7 @@ const BoardComponent: FC<BoardProps> = ({ board, setBoard, currentPlayer, swapPl
       {/* Отображение текущего игрока */}
       <h3>
         Текущий игрок: {currentPlayer?.color === Colors.WHITE ? 'Белые' : 'Черные'}
+        {isAIThinking && ' (AI думает...)'}
       </h3>
 
       {/* Статус игры */}
