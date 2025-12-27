@@ -31,9 +31,11 @@ export default async function handler(req, res) {
       });
     }
 
+    console.log('Request body:', req.body);
     const { board, currentColor } = req.body;
 
     if (!board || !currentColor) {
+      console.log('Missing required data:', { board: !!board, currentColor });
       return res.status(400).json({ 
         success: false, 
         error: 'Board and currentColor are required' 
@@ -106,21 +108,49 @@ const prompt = `Сделай легальный ход для ${playerColor}.
 
 Ход:`;
 
-    const response = await openaiClient.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "Ты шахматный эксперт. Отвечай только одним ходом в алгебраической нотации без объяснений."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: 10,
-      temperature: 0.7,
-    });
+    console.log('Sending to OpenAI:', prompt);
+    
+    let response;
+    try {
+      console.log('Sending to OpenAI:', prompt);
+      
+      response = await openaiClient.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "Ты шахматный эксперт. Отвечай только одним ходом в алгебраической нотации без объяснений."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 10,
+        temperature: 0.7,
+      });
+      
+      console.log('OpenAI response:', response);
+    } catch (openaiError) {
+      console.error('OpenAI API Error:', openaiError);
+      
+      // Fallback to simple moves
+      const fallbackMoves = currentColor === 'BLACK' 
+        ? ['e5', 'd5', 'Nf6', 'Nc6', 'Bc5', 'Bb4']
+        : ['e4', 'd4', 'Nf3', 'Nc3', 'Bc4', 'Bb5'];
+      
+      const randomMove = fallbackMoves[Math.floor(Math.random() * fallbackMoves.length)];
+      console.log('Using fallback move:', randomMove);
+      
+      return res.status(200).json({
+        success: true,
+        move: randomMove,
+        model: 'fallback',
+        usage: null
+      });
+    }
+    
+    console.log('OpenAI response:', response);
 
     const aiMove = response.choices[0].message.content?.trim();
 
@@ -152,11 +182,13 @@ const prompt = `Сделай легальный ход для ${playerColor}.
 
   } catch (error) {
     console.error('AI Move Error:', error);
+    console.error('Error stack:', error.stack);
     
     return res.status(500).json({
       success: false,
       error: error.message,
-      details: error.response?.data || 'No additional details'
+      details: error.response?.data || 'No additional details',
+      stack: error.stack
     });
   }
 }

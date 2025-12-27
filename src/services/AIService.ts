@@ -231,6 +231,8 @@ function findAnyPieceForMove(target: { x: number; y: number }, board: Board): { 
  */
 export async function getAIMove(board: Board, currentColor: Colors): Promise<AIMoveResult> {
   try {
+    console.log(`Getting AI move for ${currentColor}`);
+    
     const boardData = {
       cells: board.cells.map(row => 
         row.map(cell => ({
@@ -254,6 +256,8 @@ export async function getAIMove(board: Board, currentColor: Colors): Promise<AIM
       currentColor: currentColor
     });
 
+    console.log('API response:', response.data);
+
     if (response.data.success && response.data.move) {
       const parsedMove = parseAlgebraicMove(response.data.move, board);
       
@@ -265,16 +269,14 @@ export async function getAIMove(board: Board, currentColor: Colors): Promise<AIM
       
       return parsedMove;
     } else {
-      return {
-        success: false,
-        error: response.data.error || 'AI failed to generate move'
-      };
+      // Если API упал, пробуем локальный fallback
+      console.log("API failed, using local fallback...");
+      return getRandomBlackMove(board);
     }
   } catch (error: any) {
-    return {
-      success: false,
-      error: error.message || 'Failed to get AI move'
-    };
+    console.error("Network error, using local fallback:", error.message);
+    // Если упал сетевой запрос, используем локальный fallback
+    return getRandomBlackMove(board);
   }
 }
 
