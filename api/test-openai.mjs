@@ -3,7 +3,7 @@ import { OpenAI } from 'openai';
 export default async function handler(req, res) {
   // CORS headers - ограничим только вашими доменами в проде
   const allowedOrigins = process.env.NODE_ENV === 'production' 
-    ? ['https://your-vercel-app.vercel.app', 'http://localhost:3000']
+    ? ['https://chess-ai-xpl0itk3y.vercel.app', 'https://chessai-lac.vercel.app', 'https://your-vercel-app.vercel.app', 'http://localhost:3000']
     : ['http://localhost:3000'];
   
   const origin = req.headers.origin;

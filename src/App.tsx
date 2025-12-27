@@ -105,10 +105,20 @@ const App = () => {
             // Обновляем доску и переключаем игрока
             updateBoard();
             swapPlayer();
+          } else {
+            console.error('AI move validation failed:', aiMove);
+            // Если ход невалидный, пропускаем ход AI и передаем управление обратно человеку
+            swapPlayer();
           }
+        } else {
+          console.error('AI move failed:', aiMove.error);
+          // Если AI не смог сделать ход, передаем управление человеку
+          swapPlayer();
         }
       } catch (error) {
         console.error('AI move failed:', error);
+        // В случае ошибки, передаем управление человеку
+        swapPlayer();
       } finally {
         setIsAIThinking(false);
       }

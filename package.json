@@ -2,7 +2,7 @@
   "name": "chess_ai",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://chess-ai-xpl0itk3y.vercel.app",
+  "homepage": "https://chessai-lac.vercel.app",
 "dependencies": {
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",

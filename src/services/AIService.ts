@@ -231,9 +231,7 @@ export async function getAIMove(board: Board, currentColor: Colors): Promise<AIM
       lostWhiteFigures: board.lostWhiteFigures
     };
 
-    const apiUrl = process.env.NODE_ENV === 'production' 
-      ? '/api/ai-move' 
-      : 'http://localhost:3000/api/ai-move';
+    const apiUrl = '/api/ai-move';
 
     const response = await axios.post(apiUrl, {
       board: boardData,
