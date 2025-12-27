@@ -16,9 +16,12 @@ export interface AIMoveResult {
  */
 export function parseAlgebraicMove(move: string, board: Board): AIMoveResult {
   try {
+    console.log(`Parsing move: ${move}`);
+    
     // Обработка рокировки
     if (move === 'O-O') { // короткая рокировка
       const kingRow = board.findKing(Colors.BLACK)?.y || 0;
+      console.log(`Castling short: from (4,${kingRow}) to (6,${kingRow})`);
       return {
         success: true,
         from: { x: 4, y: kingRow },
@@ -28,6 +31,7 @@ export function parseAlgebraicMove(move: string, board: Board): AIMoveResult {
     
     if (move === 'O-O-O') { // длинная рокировка
       const kingRow = board.findKing(Colors.BLACK)?.y || 0;
+      console.log(`Castling long: from (4,${kingRow}) to (2,${kingRow})`);
       return {
         success: true,
         from: { x: 4, y: kingRow },
@@ -66,7 +70,32 @@ export function parseAlgebraicMove(move: string, board: Board): AIMoveResult {
       const simpleMatch = move.match(/^([a-h])([1-8])$/);
       if (simpleMatch) {
         to = { x: simpleMatch[1].charCodeAt(0) - 97, y: 8 - parseInt(simpleMatch[2]) };
+        console.log(`Simple move to: (${to.x},${to.y})`);
+        
+        // Сначала пробуем как ход пешки (самый частый случай)
         from = findPiecePosition('P', to, board);
+        if (!from) {
+          console.log("No pawn found, searching for any piece...");
+          // Ищем любую фигуру, которая может сделать этот ход
+          from = findAnyPieceForMove(to, board);
+        }
+        
+        // Если все еще не нашли, проверяем есть ли вообще фигуры на доске
+        if (!from) {
+          console.log("Debug: listing all black pieces that can move:");
+          for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 8; x++) {
+              const cell = board.getCell(x, y);
+              if (cell.figure && cell.figure.color === Colors.BLACK) {
+                console.log(`${cell.figure.name} at (${x},${y})`);
+              }
+            }
+          }
+        }
+        
+        if (!from) {
+          console.log(`No piece found that can move to (${to.x},${to.y})`);
+        }
       } else {
         return { success: false, error: `Invalid move format: ${move}` };
       }
@@ -135,6 +164,50 @@ function findPiecePosition(piece: string, target: { x: number; y: number }, boar
 
   // Если несколько кандидатов - выбираем первый (можно улучшить логику)
   return candidates[0] || null;
+}
+
+/**
+ * Находит любую фигуру, которая может сделать ход на целевую клетку
+ */
+function findAnyPieceForMove(target: { x: number; y: number }, board: Board): { x: number; y: number } | null {
+  const candidates: { x: number; y: number }[] = [];
+
+  // Ищем любую черную фигуру, которая может пойти на target
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const cell = board.getCell(x, y);
+      if (cell.figure && cell.figure.color === Colors.BLACK) {
+        if (cell.figure.canMove(board.getCell(target.x, target.y))) {
+          candidates.push({ x, y });
+          console.log(`Found candidate: ${cell.figure.name} at (${x},${y}) can move to (${target.x},${target.y})`);
+        }
+      }
+    }
+  }
+
+  console.log(`Total candidates found: ${candidates.length}`);
+
+  // Если только один кандидат - выбираем его
+  if (candidates.length === 1) return candidates[0];
+
+  // Если несколько кандидатов - выбираем наиболее подходящую фигуру
+  if (candidates.length > 1) {
+    // Приоритет: пешки > кони > слоны > ладьи > ферзь > король
+    const priority = ['Пешка', 'Конь', 'Слон', 'Ладья', 'Ферзь', 'Король'];
+    for (const pieceName of priority) {
+      const piece = candidates.find(c => {
+        const cell = board.getCell(c.x, c.y);
+        return cell.figure?.name === pieceName;
+      });
+      if (piece) {
+        console.log(`Selected priority piece: ${pieceName}`);
+        return piece;
+      }
+    }
+    return candidates[0];
+  }
+
+  return null;
 }
 
 /**
