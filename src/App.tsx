@@ -32,8 +32,8 @@ const App = () => {
   const [board, setBoard] = useState(new Board())
   // Игрок, играющий белыми фигурами
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
-  // Режим игры: true - игра с AI, false - два человека
-  const [isAIMode, setIsAIMode] = useState(true);
+  // Режим игры: 'human' - два человека, 'easy' - простой AI, 'hard' - сильный AI
+  const [gameMode, setGameMode] = useState<'human' | 'easy' | 'hard'>('hard');
   // Состояние загрузки AI хода
   const [isAIThinking, setIsAIThinking] = useState(false);
 
@@ -64,14 +64,14 @@ const App = () => {
    */
   useEffect(() => {
     const makeAIMove = async () => {
-      if (!isAIMode || !currentPlayer || currentPlayer.color !== Colors.BLACK || isAIThinking) {
+      if (gameMode === 'human' || !currentPlayer || currentPlayer.color !== Colors.BLACK || isAIThinking) {
         return;
       }
 
       setIsAIThinking(true);
       
       try {
-        const aiMove = await getAIMove(board, Colors.BLACK);
+        const aiMove = await getAIMove(board, Colors.BLACK, gameMode === 'easy' ? 'easy' : 'hard');
         
         if (aiMove.success && aiMove.from && aiMove.to) {
           const fromCell = board.getCell(aiMove.from.x, aiMove.from.y);
@@ -136,7 +136,7 @@ const App = () => {
 
     const timer = setTimeout(makeAIMove, 1000); // Задержка 1 секунда для лучшего UX
     return () => clearTimeout(timer);
-  }, [currentPlayer, isAIMode, board]);
+  }, [currentPlayer, gameMode, board]);
 
   /**
    * Обновляет состояние доски
@@ -157,30 +157,65 @@ const App = () => {
         borderRadius: '8px'
       }}>
         <h4>Режим игры:</h4>
-        <button
-          onClick={() => {
-            setIsAIMode(!isAIMode);
-            restart();
-          }}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: isAIMode ? '#28a745' : '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            margin: '0 10px'
-          }}
-        >
-          {isAIMode ? '🤖 Человек vs AI' : '👥 Человек vs Человек'}
-        </button>
-        {isAIThinking && (
+        <div style={{ marginBottom: '10px' }}>
+          <button
+            onClick={() => {
+              setGameMode('human');
+              restart();
+            }}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: gameMode === 'human' ? '#007bff' : '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              margin: '0 5px'
+            }}
+          >
+            👥 Человек vs Человек
+          </button>
+          <button
+            onClick={() => {
+              setGameMode('easy');
+              restart();
+            }}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: gameMode === 'easy' ? '#ffc107' : '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              margin: '0 5px'
+            }}
+          >
+            🤖 AI: Легкий
+          </button>
+          <button
+            onClick={() => {
+              setGameMode('hard');
+              restart();
+            }}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: gameMode === 'hard' ? '#dc3545' : '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              margin: '0 5px'
+            }}
+          >
+            🧠 AI: Сильный (GPT-4)
+          </button>
+        </div>
+        {isAIThinking && gameMode !== 'human' && (
           <div style={{ 
-            marginTop: '10px', 
             color: '#666',
             fontStyle: 'italic'
           }}>
-            🤔 AI думает...
+            🤔 {gameMode === 'easy' ? 'Простой AI думает...' : 'Сильный AI анализирует...'}
           </div>
         )}
       </div>

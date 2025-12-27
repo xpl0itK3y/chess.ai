@@ -272,7 +272,8 @@ function findAnyPieceForMove(target: { x: number; y: number }, board: Board): { 
 /**
  * Получает ход от AI
  */
-export async function getAIMove(board: Board, currentColor: Colors): Promise<AIMoveResult> {
+export async function getAIMove(board: Board, currentColor: Colors, difficulty: 'easy' | 'hard' = 'hard'): Promise<AIMoveResult> {
+  console.log(`Getting ${difficulty} AI move for ${currentColor}`);
   try {
     console.log(`Getting AI move for ${currentColor}`);
     
@@ -292,51 +293,74 @@ export async function getAIMove(board: Board, currentColor: Colors): Promise<AIM
       lostWhiteFigures: board.lostWhiteFigures
     };
 
-    // Сначала пробуем простой AI
-    try {
-      const simpleResponse = await axios.post('/api/simple-ai', {
-        board: boardData,
-        currentColor: currentColor
-      });
+    // Легкий режим - только простой AI
+    if (difficulty === 'easy') {
+      try {
+        const simpleResponse = await axios.post('/api/simple-ai', {
+          board: boardData,
+          currentColor: currentColor
+        });
 
-      if (simpleResponse.data.success && simpleResponse.data.move) {
-        const parsedMove = parseAlgebraicMove(simpleResponse.data.move, board);
-        console.log("Simple AI response:", simpleResponse.data);
-        
-        if (parsedMove.success) {
-          return parsedMove;
+        if (simpleResponse.data.success && simpleResponse.data.move) {
+          const parsedMove = parseAlgebraicMove(simpleResponse.data.move, board);
+          console.log("Simple AI response:", simpleResponse.data);
+          
+          if (parsedMove.success) {
+            return parsedMove;
+          }
         }
+      } catch (simpleError: any) {
+        console.log("Simple AI failed:", simpleError.message);
       }
-    } catch (simpleError: any) {
-      console.log("Simple AI failed:", simpleError.message);
     }
 
-    // Если простой AI не сработал, пробуем полный AI
-    const response = await axios.post('/api/ai-move', {
-      board: boardData,
-      currentColor: currentColor
-    });
+    // Сложный режим - умный AI + OpenAI GPT-4
+    if (difficulty === 'hard') {
+      // 1. Сначала пробуем умный AI (самый сильный)
+      try {
+        const smartResponse = await axios.post('/api/smart-ai', {
+          board: boardData,
+          currentColor: currentColor
+        });
 
-    console.log('Full AI response:', response.data);
-
-    if (response.data.success && response.data.move) {
-      const parsedMove = parseAlgebraicMove(response.data.move, board);
-      
-      // Если AI дал плохой ход, пробуем fallback
-      if (!parsedMove.success && currentColor === Colors.BLACK) {
-        console.log("AI gave invalid move, trying fallback...");
-        return getRandomBlackMove(board);
+        if (smartResponse.data.success && smartResponse.data.move) {
+          const parsedMove = parseAlgebraicMove(smartResponse.data.move, board);
+          console.log("Smart AI response:", smartResponse.data);
+          
+          if (parsedMove.success) {
+            return parsedMove;
+          }
+        }
+      } catch (smartError: any) {
+        console.log("Smart AI failed:", smartError.message);
       }
-      
-      return parsedMove;
-    } else {
-      // Если API упал, пробуем локальный fallback
-      console.log("API failed, using local fallback...");
-      return getRandomBlackMove(board);
+
+      // 2. Пробуем OpenAI GPT-4 (гроссмейстер)
+      try {
+        const openaiResponse = await axios.post('/api/ai-move', {
+          board: boardData,
+          currentColor: currentColor
+        });
+
+        if (openaiResponse.data.success && openaiResponse.data.move) {
+          const parsedMove = parseAlgebraicMove(openaiResponse.data.move, board);
+          console.log("OpenAI GPT-4 response:", openaiResponse.data);
+          
+          if (parsedMove.success) {
+            return parsedMove;
+          }
+        }
+      } catch (openaiError: any) {
+        console.log("OpenAI GPT-4 failed:", openaiError.message);
+      }
     }
+
+    // 4. Локальный fallback - самый надежный
+    console.log("All APIs failed, using local fallback...");
+    return getRandomBlackMove(board);
+
   } catch (error: any) {
     console.error("Network error, using local fallback:", error.message);
-    // Если упал сетевой запрос, используем локальный fallback
     return getRandomBlackMove(board);
   }
 }
