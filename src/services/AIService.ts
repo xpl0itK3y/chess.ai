@@ -22,21 +22,55 @@ export function parseAlgebraicMove(move: string, board: Board): AIMoveResult {
     if (move === 'O-O') { // короткая рокировка
       const kingRow = board.findKing(Colors.BLACK)?.y || 0;
       console.log(`Castling short: from (4,${kingRow}) to (6,${kingRow})`);
-      return {
+      
+      // Проверяем что рокировка легальна
+      const kingCell = board.getCell(4, kingRow);
+      const rookCell = board.getCell(7, kingRow);
+      
+      if (!kingCell?.figure || !rookCell?.figure) {
+        return { success: false, error: 'Castling: missing pieces' };
+      }
+      
+      const castlingMove = {
         success: true,
         from: { x: 4, y: kingRow },
         to: { x: 6, y: kingRow }
       };
+      
+      // Проверяем что король может сделать рокировку
+      const targetCell = board.getCell(6, kingRow);
+      if (!kingCell.figure.canMove(targetCell)) {
+        return { success: false, error: 'Castling move not legal' };
+      }
+      
+      return castlingMove;
     }
     
     if (move === 'O-O-O') { // длинная рокировка
       const kingRow = board.findKing(Colors.BLACK)?.y || 0;
       console.log(`Castling long: from (4,${kingRow}) to (2,${kingRow})`);
-      return {
+      
+      // Проверяем что рокировка легальна
+      const kingCell = board.getCell(4, kingRow);
+      const rookCell = board.getCell(0, kingRow);
+      
+      if (!kingCell?.figure || !rookCell?.figure) {
+        return { success: false, error: 'Castling: missing pieces' };
+      }
+      
+      const castlingMove = {
         success: true,
         from: { x: 4, y: kingRow },
         to: { x: 2, y: kingRow }
       };
+      
+      // Проверяем что король может сделать рокировку
+      const targetCell = board.getCell(2, kingRow);
+      if (!kingCell.figure.canMove(targetCell)) {
+        return { success: false, error: 'Castling move not legal' };
+      }
+      
+      return castlingMove;
     }
 
     // Проверяем на очевидно неправильные ходы для черных

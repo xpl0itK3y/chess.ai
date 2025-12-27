@@ -80,7 +80,7 @@ export default async function handler(req, res) {
         }
         if (y < 7) fen += '/';
       }
-      return fen;
+      return fen + ' ' + (currentColor === 'BLACK' ? 'b' : 'w') + ' - - 0 1';
     };
 
     const fenBoard = boardToFen(board);
@@ -91,20 +91,19 @@ export default async function handler(req, res) {
 
 const prompt = `Сделай легальный ход для ${playerColor}.
 
-Позиция: ${fenBoard}
-Ход: ${playerColor}
+FEN: ${fenBoard}
+Активный игрок: ${playerColor === 'черных' ? 'b' : 'w'}
 
-ЗАПРЕЩЕННЫЕ ХОДЫ ДЛЯ ЧЕРНЫХ:
-- e4, d4, f4, c4 (это ходы белых пешек!)
-- Bc4, Bb5 (это ходы белых слонов!)
-- Nf3, Nc3 (это ходы белых коней!)
+ЭКСТРЕМАЛЬНО ВАЖНО:
+- Если FEN показывает "b" (черные ходят) - двигай ТОЛЬКО черные фигуры!
+- Если FEN показывает "w" (белые ходят) - двигай ТОЛЬКО белые фигуры!
+- Черные пешки идут ВНИЗ по доске: e5, d5, Nf6, Nc6
+- Белые пешки идут ВВЕРХ по доске: e4, d4, Nf3, Nc3
 
-РАЗРЕШЕННЫЕ ХОДЫ ДЛЯ ЧЕРНЫХ:
-- e5, d5, f5, c5 (пешки)
-- Nf6, Nc6, Na6, Nh6 (кони)
-- Bc5, Bb4, Bg7, Bg4 (слоны)
+ЧЕРНЫЕ легальные ходы: e5, d5, f5, c5, Nf6, Nc6, Bc5, Bb4
+БЕЛЫЕ легальные ходы: e4, d4, f4, c4, Nf3, Nc3, Bc4, Bb5
 
-ТВЕ РАБОТА: Верни ОДИН легальный ход для ${playerColor}.
+Верни ТОЛЬКО ОДИН ход:
 
 Ход:`;
 

@@ -77,7 +77,14 @@ const App = () => {
           const fromCell = board.getCell(aiMove.from.x, aiMove.from.y);
           const toCell = board.getCell(aiMove.to.x, aiMove.to.y);
           
-          if (fromCell.figure && fromCell.figure.canMove(toCell)) {
+          // Дополнительная проверка что это черная фигура
+          if (!fromCell.figure || fromCell.figure.color !== Colors.BLACK) {
+            console.error('AI tried to move non-black piece:', aiMove);
+            swapPlayer();
+            return;
+          }
+          
+          if (fromCell.figure && fromCell.figure.canMove(toCell) && board.isMoveLegal(fromCell, toCell)) {
             const needsPromotion = fromCell.moveFigure(toCell);
             
             if (needsPromotion && aiMove.promotion) {
@@ -107,6 +114,9 @@ const App = () => {
             swapPlayer();
           } else {
             console.error('AI move validation failed:', aiMove);
+            console.error('From figure:', fromCell.figure);
+            console.error('Can move:', fromCell.figure?.canMove(toCell));
+            console.error('Is legal:', board.isMoveLegal(fromCell, toCell));
             // Если ход невалидный, пропускаем ход AI и передаем управление обратно человеку
             swapPlayer();
           }
