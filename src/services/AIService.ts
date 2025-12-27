@@ -364,11 +364,11 @@ export async function getAIMove(board: Board, currentColor: Colors, difficulty: 
   }
 }
 
-/**
-   * Fallback функция - выбирает случайный легальный ход для черных
-   */
+ /**
+    * Умная fallback функция - выбирает лучший легальный ход для черных
+    */
 function getRandomBlackMove(board: Board): AIMoveResult {
-  const possibleMoves: { from: { x: number; y: number }, to: { x: number; y: number }, isCapture: boolean }[] = [];
+  const possibleMoves: { from: { x: number; y: number }, to: { x: number; y: number }, isCapture: boolean, score: number }[] = [];
   
   // Ищем все возможные ходы для черных фигур
   for (let y = 0; y < 8; y++) {
@@ -382,10 +382,33 @@ function getRandomBlackMove(board: Board): AIMoveResult {
             const toCell = board.getCell(tx, ty);
             if (fromCell.figure.canMove(toCell) && board.isMoveLegal(fromCell, toCell)) {
               const isCapture = toCell.figure !== null;
+              
+              // Оценим ход
+              let score = Math.random() * 10;
+              
+              // Бонус за взятие
+              if (isCapture) {
+                const pieceValues: { [key: string]: number } = {
+                  'Пешка': 1,
+                  'Конь': 3,
+                  'Слон': 3,
+                  'Ладья': 5,
+                  'Ферзь': 9,
+                  'Король': 100
+                };
+                score += (pieceValues[toCell.figure!.name] || 1) * 50;
+              }
+              
+              // Бонус за контроль центра
+              if (tx >= 3 && tx <= 4 && ty >= 3 && ty <= 4) {
+                score += 20;
+              }
+              
               possibleMoves.push({
                 from: { x, y },
                 to: { x: tx, y: ty },
-                isCapture
+                isCapture,
+                score
               });
             }
           }
@@ -401,17 +424,18 @@ function getRandomBlackMove(board: Board): AIMoveResult {
     };
   }
   
-  // Приоритет взятиям (70% шанс если есть взятия)
-  const captures = possibleMoves.filter(move => move.isCapture);
-  const nonCaptures = possibleMoves.filter(move => !move.isCapture);
+  // Сортируем ходы по оценке
+  possibleMoves.sort((a, b) => b.score - a.score);
   
+  // 80% лучший ход, 20% случайный из топ-3
   let selectedMove;
-  if (captures.length > 0 && Math.random() < 0.7) {
-    selectedMove = captures[Math.floor(Math.random() * captures.length)];
-    console.log(`Fallback: selected CAPTURE from (${selectedMove.from.x},${selectedMove.from.y}) to (${selectedMove.to.x},${selectedMove.to.y})`);
+  if (Math.random() < 0.8) {
+    selectedMove = possibleMoves[0];
+    console.log(`Fallback: selected BEST move (score: ${selectedMove.score}) from (${selectedMove.from.x},${selectedMove.from.y}) to (${selectedMove.to.x},${selectedMove.to.y})`);
   } else {
-    selectedMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-    console.log(`Fallback: selected move from (${selectedMove.from.x},${selectedMove.from.y}) to (${selectedMove.to.x},${selectedMove.to.y})`);
+    const topMoves = possibleMoves.slice(0, Math.min(3, possibleMoves.length));
+    selectedMove = topMoves[Math.floor(Math.random() * topMoves.length)];
+    console.log(`Fallback: selected from TOP-${topMoves.length} moves from (${selectedMove.from.x},${selectedMove.from.y}) to (${selectedMove.to.x},${selectedMove.to.y})`);
   }
   
   return {
