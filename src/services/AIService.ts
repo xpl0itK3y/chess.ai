@@ -284,8 +284,7 @@ export async function getAIMove(board: Board, currentColor: Colors, difficulty: 
           y: cell.y,
           figure: cell.figure ? {
             name: cell.figure.name,
-            color: cell.figure.color,
-            logo: cell.figure.logo
+            color: cell.figure.color
           } : null
         }))
       ),
@@ -366,8 +365,8 @@ export async function getAIMove(board: Board, currentColor: Colors, difficulty: 
 }
 
 /**
- * Fallback функция - выбирает случайный легальный ход для черных
- */
+   * Fallback функция - выбирает случайный легальный ход для черных
+   */
 function getRandomBlackMove(board: Board): AIMoveResult {
   const possibleMoves: { from: { x: number; y: number }, to: { x: number; y: number }, isCapture: boolean }[] = [];
   
@@ -381,7 +380,7 @@ function getRandomBlackMove(board: Board): AIMoveResult {
         for (let ty = 0; ty < 8; ty++) {
           for (let tx = 0; tx < 8; tx++) {
             const toCell = board.getCell(tx, ty);
-            if (fromCell.figure.canMove(toCell)) {
+            if (fromCell.figure.canMove(toCell) && board.isMoveLegal(fromCell, toCell)) {
               const isCapture = toCell.figure !== null;
               possibleMoves.push({
                 from: { x, y },

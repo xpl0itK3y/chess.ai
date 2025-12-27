@@ -23,95 +23,73 @@ export default async function handler(req, res) {
     const { board, currentColor } = req.body;
     console.log('Smart AI Request received:', { currentColor, hasBoard: !!board });
 
-    // Умный анализ позиции
-    const analyzePosition = (board, color) => {
-      const targetColor = color === 'BLACK' ? 'WHITE' : 'BLACK';
-      let bestMoves = [];
+    // Простая функция для оценки ходов
+    const evaluateMove = (fromX, fromY, toX, toY, board) => {
+      let score = Math.random() * 10; // базовая случайность
       
-      for (let y = 0; y < 8; y++) {
-        for (let x = 0; x < 8; x++) {
-          const fromCell = board.cells[y][x];
-          if (fromCell.figure && fromCell.figure.color === color) {
-            
-            for (let ty = 0; ty < 8; ty++) {
-              for (let tx = 0; tx < 8; tx++) {
-                const toCell = board.cells[ty][tx];
+      const fromCell = board.cells[fromY][fromX];
+      const toCell = board.cells[toY][toX];
+      
+      if (!fromCell || !fromCell.figure) return -1;
+      
+      // Бонус за взятие
+      if (toCell.figure) {
+        const pieceValues = {
+          'Пешка': 1,
+          'Конь': 3,
+          'Слон': 3,
+          'Ладья': 5,
+          'Ферзь': 9,
+          'Король': 100
+        };
+        score += (pieceValues[toCell.figure.name] || 0) * 15;
+      }
+      
+      // Бонус за контроль центра
+      if (toX >= 3 && toX <= 4 && toY >= 3 && toY <= 4) {
+        score += 5;
+      }
+      
+      // Бонус за развитие
+      const backRank = fromCell.figure.color === 'BLACK' ? 0 : 7;
+      if (fromY === backRank && toY !== backRank) {
+        score += 3;
+      }
+      
+      return score;
+    };
+
+    // Ищем лучший ход
+    let bestMove = null;
+    let bestScore = -1;
+    
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 8; x++) {
+        const fromCell = board.cells[y][x];
+        if (fromCell.figure && fromCell.figure.color === currentColor) {
+          
+          for (let ty = 0; ty < 8; ty++) {
+            for (let tx = 0; tx < 8; tx++) {
+              const toCell = board.cells[ty][tx];
+              
+              if (fromCell.figure.canMove(toCell)) {
+                const score = evaluateMove(x, y, tx, ty, board);
                 
-                if (fromCell.figure.canMove(toCell)) {
-                  const move = {
+                if (score > bestScore) {
+                  bestScore = score;
+                  bestMove = {
                     from: { x, y },
-                    to: { x: tx, y: ty },
-                    piece: fromCell.figure.name,
-                    capture: toCell.figure !== null,
-                    captureValue: getPieceValue(toCell.figure),
-                    centerControl: isCenterControl({ x: tx, y: ty }),
-                    development: isDevelopmentMove(fromCell, toCell)
+                    to: { x: tx, y: ty }
                   };
-                  
-                  bestMoves.push(move);
                 }
               }
             }
           }
         }
       }
-      
-      return bestMoves;
-    };
+    }
 
-    const getPieceValue = (figure) => {
-      if (!figure) return 0;
-      const values = {
-        'Пешка': 1,
-        'Конь': 3,
-        'Слон': 3,
-        'Ладья': 5,
-        'Ферзь': 9,
-        'Король': 100
-      };
-      return values[figure.name] || 0;
-    };
-
-    const isCenterControl = (pos) => {
-      return (pos.x >= 3 && pos.x <= 4 && pos.y >= 3 && pos.y <= 4) ? 1 : 0;
-    };
-
-    const isDevelopmentMove = (from, to) => {
-      const backRank = from.figure.color === 'BLACK' ? 0 : 7;
-      return from.y === backRank && to.y !== backRank ? 1 : 0;
-    };
-
-    // Оценка ходов
-    const evaluateMove = (move) => {
-      let score = 0;
-      
-      // Взятия - высший приоритет
-      if (move.capture) {
-        score += move.captureValue * 10;
-      }
-      
-      // Контроль центра
-      score += move.centerControl * 2;
-      
-      // Развитие фигур
-      score += move.development * 1.5;
-      
-      // Бонусы за тип фигур
-      const pieceBonus = {
-        'Ферзь': 2,
-        'Ладья': 1.5,
-        'Слон': 1,
-        'Конь': 1.2,
-        'Пешка': 0.5
-      };
-      score += pieceBonus[move.piece] || 0;
-      
-      return score;
-    };
-
-    const moves = analyzePosition(board, currentColor);
-    
-    if (moves.length === 0) {
+    if (!bestMove) {
       return res.status(200).json({
         success: true,
         move: null,
@@ -121,17 +99,38 @@ export default async function handler(req, res) {
       });
     }
 
-    // Сортируем по оценке
-    moves.sort((a, b) => evaluateMove(b) - evaluateMove(a));
-    
-    // Выбираем из лучших ходов (топ 5)
-    const topMoves = moves.slice(0, Math.min(5, moves.length));
-    const selectedMove = topMoves[Math.floor(Math.random() * topMoves.length)];
-    
     // Конвертируем в нотацию
-    const moveNotation = convertMoveToNotation(selectedMove);
+    const fromFile = String.fromCharCode(bestMove.from.x + 97);
+    const toFile = String.fromCharCode(bestMove.to.x + 97);
+    const toRank = 8 - bestMove.to.y;
     
-    console.log(`Smart AI selected: ${moveNotation} (score: ${evaluateMove(selectedMove)})`);
+    const fromCell = board.cells[bestMove.from.y][bestMove.from.x];
+    const isCapture = board.cells[bestMove.to.y][bestMove.to.x].figure !== null;
+    
+    let moveNotation;
+    if (fromCell.figure.name === 'Пешка') {
+      if (isCapture) {
+        moveNotation = `${fromFile}x${toFile}${toRank}`;
+      } else {
+        moveNotation = `${toFile}${toRank}`;
+      }
+    } else {
+      const pieceNotation = {
+        'Король': 'K',
+        'Ферзь': 'Q',
+        'Ладья': 'R', 
+        'Слон': 'B',
+        'Конь': 'N'
+      }[fromCell.figure.name];
+      
+      if (isCapture) {
+        moveNotation = `${pieceNotation}${fromFile}x${toFile}${toRank}`;
+      } else {
+        moveNotation = `${pieceNotation}${toFile}${toRank}`;
+      }
+    }
+    
+    console.log(`Smart AI selected: ${moveNotation} (score: ${bestScore})`);
 
     return res.status(200).json({
       success: true,
@@ -151,31 +150,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
-const convertMoveToNotation = (move) => {
-  const fromFile = String.fromCharCode(move.from.x + 97);
-  const toFile = String.fromCharCode(move.to.x + 97);
-  const toRank = 8 - move.to.y;
-  
-  if (move.piece === 'Пешка') {
-    if (move.capture) {
-      return `${fromFile}x${toFile}${toRank}`;
-    } else {
-      return `${toFile}${toRank}`;
-    }
-  }
-  
-  const pieceNotation = {
-    'Король': 'K',
-    'Ферзь': 'Q',
-    'Ладья': 'R', 
-    'Слон': 'B',
-    'Конь': 'N'
-  }[move.piece];
-  
-  if (move.capture) {
-    return `${pieceNotation}${fromFile}x${toFile}${toRank}`;
-  } else {
-    return `${pieceNotation}${toFile}${toRank}`;
-  }
-};
