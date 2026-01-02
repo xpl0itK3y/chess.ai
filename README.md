@@ -71,7 +71,7 @@ chess.ai/
 │   │   ├── BoardComponent.tsx    # Компонент шахматной доски
 │   │   ├── CellComponent.tsx     # Компонент клетки
 │   │   ├── LostFigures.tsx       # Сброшенные фигуры
-│   │   └── Timer.tsx              # Таймер игры
+│   │   └── Timer.tsx             # Таймер игры
 │   ├── models/           # Модели данных
 │   │   ├── figures/      # Классы фигур
 │   │   ├── Board.ts      # Класс доски
